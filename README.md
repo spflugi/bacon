@@ -1,8 +1,12 @@
 # Bacon
 
-Desktop requirements and specification manager for AI-assisted development.
+Desktop requirements and specification manager for AI-assisted development. This app was made with the help of AI (Claude - Anthropic).
 
 **Stack:** Tauri v2 + React 19 + TypeScript + Tailwind CSS v4 + SQLite
+
+![](docs/screenshot1.png)
+
+![](docs/screenshot2.png)
 
 ## Prerequisites
 
@@ -51,3 +55,6 @@ Replace `<version>` and `<toolset>` with the values from your VS installation. Y
 Get-ChildItem "C:\Program Files\Microsoft Visual Studio" -Recurse -Filter "link.exe" |
     Where-Object { $_.FullName -match "Hostx64\\x64" }
 ```
+
+## License
+[License](LICENSE)
