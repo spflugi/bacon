@@ -56,5 +56,36 @@ Get-ChildItem "C:\Program Files\Microsoft Visual Studio" -Recurse -Filter "link.
     Where-Object { $_.FullName -match "Hostx64\\x64" }
 ```
 
+## Releasing a new version
+
+### 1. Bump the version
+
+Run the PowerShell script from the repo root. It updates `package.json`, `src-tauri/tauri.conf.json`, and `src-tauri/Cargo.toml`, then commits the change:
+
+```powershell
+.\bump-version.ps1 -Bump patch   # bug fixes, UI polish      (0.1.0 -> 0.1.1)
+.\bump-version.ps1 -Bump minor   # new user-visible feature   (0.1.0 -> 0.2.0)
+.\bump-version.ps1 -Bump major   # breaking change            (0.1.0 -> 1.0.0)
+```
+
+The script does **not** create a git tag — do that after the version commit has been squashed/merged into `develop`, so the tag points to the final commit:
+
+```bash
+git tag v<new-version>
+git push origin v<new-version>
+```
+
+### 2. Deploy pipeline
+
+Pushing a `v*.*.*` tag triggers the **Deploy** GitHub Actions workflow (`.github/workflows/deploy.yml`), which:
+
+1. Builds the Tauri release app on `windows-latest`
+2. Creates a GitHub Release named `Bacon v<version>` with the NSIS installer attached
+3. Uploads the installer as a workflow artifact (90-day retention)
+
+The workflow can also be triggered manually from the Actions tab (`workflow_dispatch`) if you need to cut a release from an arbitrary ref.
+
+No secrets are required beyond the automatic `GITHUB_TOKEN`.
+
 ## License
 [License](LICENSE)
