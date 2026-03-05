@@ -100,6 +100,7 @@ jobs:
             ### Requirements
             - Windows 10 / 11 (x64)
             - WebView2 runtime (included in Windows 11; the installer will prompt on Windows 10)
+          generate_release_notes: true
           files: src-tauri/target/release/bundle/nsis/Bacon_*_x64-setup.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
