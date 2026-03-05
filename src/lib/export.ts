@@ -46,6 +46,7 @@ export function exportToMarkdown(
   lines.push(`tool: bacon`);
   lines.push(`project: ${yamlStr(project.name)}`);
   lines.push(`prefix: ${project.prefix}`);
+  lines.push(`bacon_project_id: ${project.id}`);
   lines.push(`exported_at: ${exportedAt}`);
   lines.push(`spec_count: ${specs.length}`);
   lines.push(`functional_count: ${functional.length}`);
@@ -63,6 +64,22 @@ export function exportToMarkdown(
     lines.push(project.description);
     lines.push("");
   }
+
+  // --- Agent Instructions ---
+  lines.push("## Agent Instructions");
+  lines.push("");
+  lines.push("> This file is managed by **Bacon**. When you implement a specification,");
+  lines.push("> change its `**Status:**` field to `` `implemented` ``:");
+  lines.push(">");
+  lines.push("> ```");
+  lines.push("> **Status:** `implemented`");
+  lines.push("> ```");
+  lines.push(">");
+  lines.push("> Valid status values: `draft` · `approved` · `implemented` · `deprecated`");
+  lines.push(">");
+  lines.push("> Do **not** remove or modify the `<!-- bacon:spec:... -->` comment markers —");
+  lines.push("> Bacon uses them to detect and sync status changes back to its database.");
+  lines.push("");
 
   // --- Summary table ---
   lines.push("## Summary");
@@ -88,14 +105,17 @@ export function exportToMarkdown(
       (l) => l.source_id === spec.id || l.target_id === spec.id
     );
 
+    // Machine-readable anchor — used by Bacon's file watcher to find this spec
+    lines.push(`<!-- bacon:spec:${spec.spec_id} -->`);
     lines.push(`### ${spec.spec_id} — ${spec.title}`);
     lines.push("");
 
-    // Flat key: value metadata (easier to parse than a table)
+    // Flat key: value metadata
     lines.push(`**ID:** \`${spec.spec_id}\``);
     lines.push(`**Type:** ${spec.type === "functional" ? "Functional" : "Non-Functional"}`);
     lines.push(`**Category:** ${spec.category}`);
-    lines.push(`**Status:** ${spec.status.charAt(0).toUpperCase() + spec.status.slice(1)}`);
+    // Status uses backtick-wrapped lowercase so Bacon can parse it back reliably
+    lines.push(`**Status:** \`${spec.status}\``);
     lines.push(`**Priority:** ${spec.priority.charAt(0).toUpperCase() + spec.priority.slice(1)}`);
     lines.push(`**Version:** ${spec.version}`);
     lines.push(`**Created:** ${isoDate(spec.created_at)}`);

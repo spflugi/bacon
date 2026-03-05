@@ -28,6 +28,8 @@ interface SpecStore {
   filters: Filters;
   loading: boolean;
   error: string | null;
+  /** Timestamp updated only on add/update/remove — NOT on load. Used by useWorkspaceSync to avoid overwriting SPECS.md on navigation. */
+  lastMutatedAt: number;
 
   load: (projectId: string) => Promise<void>;
   setActive: (id: string | null) => void;
@@ -54,6 +56,7 @@ export const useSpecStore = create<SpecStore>((set, get) => ({
   filters: { search: "", type: "all", status: "all", priority: "all", tag: "", category: "" },
   loading: false,
   error: null,
+  lastMutatedAt: 0,
 
   load: async (projectId) => {
     set({ loading: true, error: null, specs: [], activeSpecId: null });
@@ -107,7 +110,7 @@ export const useSpecStore = create<SpecStore>((set, get) => ({
       ...data,
     };
     await createSpecification(spec);
-    set((s) => ({ specs: [...s.specs, spec] }));
+    set((s) => ({ specs: [...s.specs, spec], lastMutatedAt: Date.now() }));
     return spec;
   },
 
@@ -124,6 +127,7 @@ export const useSpecStore = create<SpecStore>((set, get) => ({
     await updateSpecification(updated);
     set((s) => ({
       specs: s.specs.map((sp) => (sp.id === updated.id ? updated : sp)),
+      lastMutatedAt: Date.now(),
     }));
   },
 
@@ -132,6 +136,7 @@ export const useSpecStore = create<SpecStore>((set, get) => ({
     set((s) => ({
       specs: s.specs.filter((sp) => sp.id !== id),
       activeSpecId: s.activeSpecId === id ? null : s.activeSpecId,
+      lastMutatedAt: Date.now(),
     }));
   },
 
