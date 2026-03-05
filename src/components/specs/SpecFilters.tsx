@@ -11,14 +11,17 @@ import {
 import { useSpecStore } from "@/store/specStore";
 
 export function SpecFilters() {
-  const { filters, setFilters } = useSpecStore();
+  const { filters, setFilters, specs } = useSpecStore();
+
+  const categories = [...new Set(specs.map((s) => s.category).filter(Boolean))].sort();
 
   const hasActive =
     filters.search ||
     filters.type !== "all" ||
     filters.status !== "all" ||
     filters.priority !== "all" ||
-    filters.tag;
+    filters.tag ||
+    filters.category;
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
@@ -78,13 +81,30 @@ export function SpecFilters() {
         </SelectContent>
       </Select>
 
+      {categories.length > 0 && (
+        <Select
+          value={filters.category || "all"}
+          onValueChange={(v) => setFilters({ category: v === "all" ? "" : v })}
+        >
+          <SelectTrigger className="h-8 text-xs w-40">
+            <SelectValue placeholder="Category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All categories</SelectItem>
+            {categories.map((cat) => (
+              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+
       {hasActive && (
         <Button
           variant="ghost"
           size="sm"
           className="h-8 text-xs gap-1"
           onClick={() =>
-            setFilters({ search: "", type: "all", status: "all", priority: "all", tag: "" })
+            setFilters({ search: "", type: "all", status: "all", priority: "all", tag: "", category: "" })
           }
         >
           <X className="h-3 w-3" />

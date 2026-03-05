@@ -18,6 +18,7 @@ interface Filters {
   status: SpecStatus | "all";
   priority: SpecPriority | "all";
   tag: string;
+  category: string;
 }
 
 interface SpecStore {
@@ -50,7 +51,7 @@ export const useSpecStore = create<SpecStore>((set, get) => ({
   specs: [],
   links: [],
   activeSpecId: null,
-  filters: { search: "", type: "all", status: "all", priority: "all", tag: "" },
+  filters: { search: "", type: "all", status: "all", priority: "all", tag: "", category: "" },
   loading: false,
   error: null,
 
@@ -79,6 +80,7 @@ export const useSpecStore = create<SpecStore>((set, get) => ({
       if (filters.status !== "all" && s.status !== filters.status) return false;
       if (filters.priority !== "all" && s.priority !== filters.priority) return false;
       if (filters.tag && !s.tags.includes(filters.tag)) return false;
+      if (filters.category && s.category !== filters.category) return false;
       if (filters.search) {
         const q = filters.search.toLowerCase();
         if (

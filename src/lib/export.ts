@@ -1,15 +1,33 @@
 import type { Project, Specification, SpecLink } from "@/types";
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+function isoDate(iso: string) {
+  return iso.slice(0, 10); // YYYY-MM-DD
 }
 
 function linkTypeLabel(t: SpecLink["link_type"]): string {
   return t.replace(/_/g, " ");
+}
+
+/** Normalize acceptance criteria to a bullet list.
+ *  Lines that already start with -, *, or a number are left as-is.
+ *  Plain text lines get a "- " prefix so each criterion is explicit.
+ */
+function normalizeCriteria(text: string): string {
+  return text
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .filter((line) => line.trim() !== "")
+    .map((line) => {
+      const trimmed = line.trim();
+      if (/^[-*]/.test(trimmed) || /^\d+\./.test(trimmed)) return line;
+      return `- ${trimmed}`;
+    })
+    .join("\n");
+}
+
+/** Escape a string value for YAML (wrap in double quotes, escape inner quotes). */
+function yamlStr(value: string) {
+  return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
 }
 
 export function exportToMarkdown(
@@ -17,26 +35,36 @@ export function exportToMarkdown(
   specs: Specification[],
   links: SpecLink[]
 ): string {
-  const now = new Date().toLocaleDateString("en-US", {
-    year: "numeric", month: "long", day: "numeric",
-  });
-
+  const exportedAt = new Date().toISOString();
   const functional = specs.filter((s) => s.type === "functional");
   const nonFunctional = specs.filter((s) => s.type === "non_functional");
 
   const lines: string[] = [];
 
+  // --- YAML frontmatter ---
+  lines.push("---");
+  lines.push(`tool: bacon`);
+  lines.push(`project: ${yamlStr(project.name)}`);
+  lines.push(`prefix: ${project.prefix}`);
+  lines.push(`exported_at: ${exportedAt}`);
+  lines.push(`spec_count: ${specs.length}`);
+  lines.push(`functional_count: ${functional.length}`);
+  lines.push(`non_functional_count: ${nonFunctional.length}`);
+  lines.push("---");
+  lines.push("");
+
+  // --- Document header ---
   lines.push(`# ${project.name} — Specification Document`);
-  lines.push(`> Generated: ${now} | Total specs: ${specs.length} | Project prefix: ${project.prefix}`);
   lines.push("");
 
   if (project.description) {
-    lines.push(`## Overview`);
+    lines.push("## Overview");
+    lines.push("");
     lines.push(project.description);
     lines.push("");
   }
 
-  // Summary table
+  // --- Summary table ---
   lines.push("## Summary");
   lines.push("");
   lines.push("| Type | Total | Draft | Approved | Implemented | Deprecated |");
@@ -54,6 +82,7 @@ export function exportToMarkdown(
   summaryRow("Non-Functional", nonFunctional);
   lines.push("");
 
+  // --- Spec renderer ---
   function renderSpec(spec: Specification) {
     const specLinks = links.filter(
       (l) => l.source_id === spec.id || l.target_id === spec.id
@@ -61,18 +90,18 @@ export function exportToMarkdown(
 
     lines.push(`### ${spec.spec_id} — ${spec.title}`);
     lines.push("");
-    lines.push(`| Field | Value |`);
-    lines.push(`|-------|-------|`);
-    lines.push(`| **ID** | \`${spec.spec_id}\` |`);
-    lines.push(`| **Type** | ${spec.type === "functional" ? "Functional" : "Non-Functional"} |`);
-    lines.push(`| **Category** | ${spec.category} |`);
-    lines.push(`| **Status** | ${spec.status.charAt(0).toUpperCase() + spec.status.slice(1)} |`);
-    lines.push(`| **Priority** | ${spec.priority.charAt(0).toUpperCase() + spec.priority.slice(1)} |`);
-    lines.push(`| **Version** | ${spec.version} |`);
-    lines.push(`| **Created** | ${formatDate(spec.created_at)} |`);
-    lines.push(`| **Last Modified** | ${formatDate(spec.updated_at)} |`);
+
+    // Flat key: value metadata (easier to parse than a table)
+    lines.push(`**ID:** \`${spec.spec_id}\``);
+    lines.push(`**Type:** ${spec.type === "functional" ? "Functional" : "Non-Functional"}`);
+    lines.push(`**Category:** ${spec.category}`);
+    lines.push(`**Status:** ${spec.status.charAt(0).toUpperCase() + spec.status.slice(1)}`);
+    lines.push(`**Priority:** ${spec.priority.charAt(0).toUpperCase() + spec.priority.slice(1)}`);
+    lines.push(`**Version:** ${spec.version}`);
+    lines.push(`**Created:** ${isoDate(spec.created_at)}`);
+    lines.push(`**Last Modified:** ${isoDate(spec.updated_at)}`);
     if (spec.tags.length > 0) {
-      lines.push(`| **Tags** | ${spec.tags.map((t) => `\`${t}\``).join(", ")} |`);
+      lines.push(`**Tags:** ${spec.tags.map((t) => `\`${t}\``).join(", ")}`);
     }
     lines.push("");
 
@@ -86,7 +115,7 @@ export function exportToMarkdown(
     if (spec.acceptance_criteria) {
       lines.push("**Acceptance Criteria**");
       lines.push("");
-      lines.push(spec.acceptance_criteria);
+      lines.push(normalizeCriteria(spec.acceptance_criteria));
       lines.push("");
     }
 
@@ -111,11 +140,9 @@ export function exportToMarkdown(
       }
       lines.push("");
     }
-
-    lines.push("---");
-    lines.push("");
   }
 
+  // --- Sections ---
   if (functional.length > 0) {
     lines.push("## Functional Requirements");
     lines.push("");
