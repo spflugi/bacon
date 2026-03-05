@@ -44,6 +44,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   add: async (data) => {
     const now = new Date().toISOString();
     const project: Project = {
+      workspace_path: "",
       id: crypto.randomUUID(),
       created_at: now,
       updated_at: now,

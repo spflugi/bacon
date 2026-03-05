@@ -4,6 +4,7 @@ import { DashboardView } from "@/components/views/DashboardView";
 import { SpecsView } from "@/components/views/SpecsView";
 import { ExportView } from "@/components/views/ExportView";
 import { useProjectStore } from "@/store/projectStore";
+import { useWorkspaceSync } from "@/hooks/useWorkspaceSync";
 
 export default function App() {
   const [view, setView] = useState<View>("dashboard");
@@ -12,6 +13,8 @@ export default function App() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useWorkspaceSync();
 
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--color-background)]">

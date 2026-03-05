@@ -68,6 +68,16 @@ async function migrate(db: Database): Promise<void> {
       change_summary TEXT NOT NULL DEFAULT ''
     );
   `);
+
+  // Migration: add workspace_path to projects if missing
+  const projectCols = await db.select<{ name: string }[]>(
+    "PRAGMA table_info(projects)"
+  );
+  if (!projectCols.find((c) => c.name === "workspace_path")) {
+    await db.execute(
+      "ALTER TABLE projects ADD COLUMN workspace_path TEXT NOT NULL DEFAULT ''"
+    );
+  }
 }
 
 function parseSpec(row: SpecificationRow): Specification {
@@ -87,16 +97,16 @@ export async function getProjects(): Promise<Project[]> {
 export async function createProject(project: Project): Promise<void> {
   const db = await getDb();
   await db.execute(
-    "INSERT INTO projects (id, name, description, prefix, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
-    [project.id, project.name, project.description, project.prefix, project.created_at, project.updated_at]
+    "INSERT INTO projects (id, name, description, prefix, workspace_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    [project.id, project.name, project.description, project.prefix, project.workspace_path ?? "", project.created_at, project.updated_at]
   );
 }
 
 export async function updateProject(project: Project): Promise<void> {
   const db = await getDb();
   await db.execute(
-    "UPDATE projects SET name=?, description=?, prefix=?, updated_at=? WHERE id=?",
-    [project.name, project.description, project.prefix, project.updated_at, project.id]
+    "UPDATE projects SET name=?, description=?, prefix=?, workspace_path=?, updated_at=? WHERE id=?",
+    [project.name, project.description, project.prefix, project.workspace_path ?? "", project.updated_at, project.id]
   );
 }
 

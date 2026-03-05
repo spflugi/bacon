@@ -12,6 +12,11 @@
     "sql:allow-close",
     "dialog:allow-open",
     "fs:allow-write-text-file",
-    "fs:scope-home-recursive"
+    "fs:allow-read-text-file",
+    "fs:allow-watch",
+    {
+      "identifier": "fs:scope",
+      "allow": [{ "path": "**", "recursive": true }]
+    }
   ]
 }
