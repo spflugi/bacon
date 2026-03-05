@@ -1,0 +1,11 @@
+.claude/
+.vscode/
+node_modules/
+dist/
+.env
+.env.*
+src-tauri/target/
+src-tauri/.cargo/
+*.db
+*.db-shm
+*.db-wal
