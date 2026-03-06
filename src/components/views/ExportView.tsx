@@ -120,7 +120,7 @@ export function ExportView() {
               ) : claudeState === "error" ? (
                 <><FileText className="h-3.5 w-3.5 text-red-400" />Failed</>
               ) : (
-                <><FileText className="h-3.5 w-3.5" />Update CLAUDE.md</>
+                <><FileText className="h-3.5 w-3.5" />Update {p.agent_file ?? "CLAUDE.md"}</>
               )}
             </Button>
           </div>

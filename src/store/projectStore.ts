@@ -45,6 +45,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     const now = new Date().toISOString();
     const project: Project = {
       workspace_path: "",
+      agent_file: "CLAUDE.md",
       id: crypto.randomUUID(),
       created_at: now,
       updated_at: now,
