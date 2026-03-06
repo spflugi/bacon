@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { FolderOpen, Plus, Pencil, Trash2, LayoutDashboard, ListChecks, FileDown } from "lucide-react";
+import { FolderOpen, Plus, Pencil, Trash2, LayoutDashboard, ListChecks } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ProjectForm } from "./ProjectForm";
 import { useProjectStore } from "@/store/projectStore";
+import { initWorkspaceFiles } from "@/lib/workspace";
 import { cn } from "@/lib/utils";
 import type { Project } from "@/types";
 
-export type View = "dashboard" | "specs" | "export";
+export type View = "dashboard" | "specs";
 
 interface SidebarProps {
   view: View;
@@ -33,9 +34,15 @@ export function Sidebar({ view, onViewChange }: SidebarProps) {
 
   function handleSave(data: Omit<Project, "id" | "created_at" | "updated_at">) {
     if (editTarget) {
-      update({ ...editTarget, ...data });
+      const updated = { ...editTarget, ...data };
+      update(updated).then(() => {
+        if (updated.workspace_path) initWorkspaceFiles(updated);
+      });
     } else {
-      add(data).then((p) => setActive(p.id));
+      add(data).then((p) => {
+        setActive(p.id);
+        if (p.workspace_path) initWorkspaceFiles(p);
+      });
     }
   }
 
@@ -47,7 +54,6 @@ export function Sidebar({ view, onViewChange }: SidebarProps) {
   const navItems: { id: View; label: string; icon: React.ReactNode }[] = [
     { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
     { id: "specs", label: "Specifications", icon: <ListChecks className="h-4 w-4" /> },
-    { id: "export", label: "Export", icon: <FileDown className="h-4 w-4" /> },
   ];
 
   return (

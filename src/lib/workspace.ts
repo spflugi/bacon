@@ -152,6 +152,27 @@ function buildBaconSection(project: Project): string {
   ].join("\n");
 }
 
+/**
+ * Initialize workspace files when a folder is first linked.
+ * Creates SPECS.md (if it doesn't exist) and writes/updates CLAUDE.md.
+ */
+export async function initWorkspaceFiles(project: Project): Promise<void> {
+  if (!project.workspace_path) return;
+
+  // Create SPECS.md only if it doesn't exist yet
+  const specPath = `${project.workspace_path}/${SPEC_FILENAME}`;
+  try {
+    await readTextFile(specPath);
+    // File exists — leave it alone
+  } catch {
+    const content = exportToMarkdown(project, [], []);
+    await writeTextFile(specPath, content);
+  }
+
+  // Create/update CLAUDE.md (handles both new and existing files)
+  await updateClaudeMd(project.workspace_path, project);
+}
+
 /** Create or update CLAUDE.md in the workspace with Bacon instructions. */
 export async function updateClaudeMd(
   workspacePath: string,

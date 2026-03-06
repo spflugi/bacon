@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Sidebar, type View } from "@/components/projects/Sidebar";
 import { DashboardView } from "@/components/views/DashboardView";
 import { SpecsView } from "@/components/views/SpecsView";
-import { ExportView } from "@/components/views/ExportView";
 import { useProjectStore } from "@/store/projectStore";
 import { useWorkspaceSync } from "@/hooks/useWorkspaceSync";
 
@@ -22,7 +21,6 @@ export default function App() {
       <main className="flex-1 flex flex-col overflow-hidden">
         {view === "dashboard" && <DashboardView />}
         {view === "specs" && <SpecsView />}
-        {view === "export" && <ExportView />}
       </main>
     </div>
   );
