@@ -17,6 +17,7 @@ export interface Project {
   description: string;
   prefix: string;
   workspace_path?: string;
+  agent_file?: string;
   created_at: string;
   updated_at: string;
 }

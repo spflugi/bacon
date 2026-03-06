@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FolderOpen, Plus, Pencil, Trash2, LayoutDashboard, ListChecks } from "lucide-react";
+import { version } from "../../../package.json";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ProjectForm } from "./ProjectForm";
@@ -61,7 +62,7 @@ export function Sidebar({ view, onViewChange }: SidebarProps) {
       {/* App title */}
       <div className="flex items-center gap-2 px-4 py-4 border-b border-[var(--color-sidebar-border)]">
         <span className="text-[var(--color-primary)] font-bold text-lg tracking-tight">Bacon</span>
-        <span className="text-[var(--color-muted-foreground)] text-xs">v0.1</span>
+        <span className="text-[var(--color-muted-foreground)] text-xs">v{version}</span>
       </div>
 
       {/* Navigation */}

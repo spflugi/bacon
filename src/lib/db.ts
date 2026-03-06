@@ -78,6 +78,11 @@ async function migrate(db: Database): Promise<void> {
       "ALTER TABLE projects ADD COLUMN workspace_path TEXT NOT NULL DEFAULT ''"
     );
   }
+  if (!projectCols.find((c) => c.name === "agent_file")) {
+    await db.execute(
+      "ALTER TABLE projects ADD COLUMN agent_file TEXT NOT NULL DEFAULT 'CLAUDE.md'"
+    );
+  }
 }
 
 function parseSpec(row: SpecificationRow): Specification {
@@ -97,16 +102,16 @@ export async function getProjects(): Promise<Project[]> {
 export async function createProject(project: Project): Promise<void> {
   const db = await getDb();
   await db.execute(
-    "INSERT INTO projects (id, name, description, prefix, workspace_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-    [project.id, project.name, project.description, project.prefix, project.workspace_path ?? "", project.created_at, project.updated_at]
+    "INSERT INTO projects (id, name, description, prefix, workspace_path, agent_file, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    [project.id, project.name, project.description, project.prefix, project.workspace_path ?? "", project.agent_file ?? "CLAUDE.md", project.created_at, project.updated_at]
   );
 }
 
 export async function updateProject(project: Project): Promise<void> {
   const db = await getDb();
   await db.execute(
-    "UPDATE projects SET name=?, description=?, prefix=?, workspace_path=?, updated_at=? WHERE id=?",
-    [project.name, project.description, project.prefix, project.workspace_path ?? "", project.updated_at, project.id]
+    "UPDATE projects SET name=?, description=?, prefix=?, workspace_path=?, agent_file=?, updated_at=? WHERE id=?",
+    [project.name, project.description, project.prefix, project.workspace_path ?? "", project.agent_file ?? "CLAUDE.md", project.updated_at, project.id]
   );
 }
 

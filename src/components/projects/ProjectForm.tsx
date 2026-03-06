@@ -4,6 +4,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -14,6 +21,8 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { FolderOpen, X } from "lucide-react";
 import type { Project } from "@/types";
 
+const PRESET_FILES = ["CLAUDE.md", "AGENTS.md", "GEMINI.md", ".cursorrules", ".windsurfrules", ".clinerules"] as const;
+
 interface ProjectFormProps {
   open: boolean;
   onClose: () => void;
@@ -21,11 +30,21 @@ interface ProjectFormProps {
   initial?: Project;
 }
 
+function getInitialPreset(agentFile: string | undefined): string {
+  const file = agentFile || "CLAUDE.md";
+  return (PRESET_FILES as readonly string[]).includes(file) ? file : "custom";
+}
+
 export function ProjectForm({ open: isOpen, onClose, onSave, initial }: ProjectFormProps) {
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [prefix, setPrefix] = useState(initial?.prefix ?? "");
   const [workspacePath, setWorkspacePath] = useState(initial?.workspace_path ?? "");
+  const [agentFilePreset, setAgentFilePreset] = useState(() => getInitialPreset(initial?.agent_file));
+  const [agentFileCustom, setAgentFileCustom] = useState(() => {
+    const file = initial?.agent_file || "CLAUDE.md";
+    return (PRESET_FILES as readonly string[]).includes(file) ? "" : file;
+  });
 
   async function pickFolder() {
     const folder = await open({ directory: true, title: "Choose agent workspace folder" });
@@ -34,11 +53,15 @@ export function ProjectForm({ open: isOpen, onClose, onSave, initial }: ProjectF
 
   function handleSave() {
     if (!name.trim()) return;
+    const agent_file = agentFilePreset === "custom"
+      ? (agentFileCustom.trim() || "CLAUDE.md")
+      : agentFilePreset;
     onSave({
       name: name.trim(),
       description: description.trim(),
       prefix: prefix.trim().toUpperCase() || name.trim().toUpperCase().slice(0, 6).replace(/\s+/g, ""),
       workspace_path: workspacePath,
+      agent_file,
     });
     onClose();
   }
@@ -109,6 +132,36 @@ export function ProjectForm({ open: isOpen, onClose, onSave, initial }: ProjectF
                 <FolderOpen className="h-4 w-4" />
                 Link workspace folder
               </Button>
+            )}
+          </div>
+          <div className="grid gap-1.5">
+            <Label>
+              Agent Instructions File{" "}
+              <span className="text-[var(--color-muted-foreground)] font-normal text-xs">
+                (file written to workspace root)
+              </span>
+            </Label>
+            <Select value={agentFilePreset} onValueChange={setAgentFilePreset}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="CLAUDE.md">CLAUDE.md — Claude Code</SelectItem>
+                <SelectItem value="AGENTS.md">AGENTS.md — OpenAI Codex / generic</SelectItem>
+                <SelectItem value="GEMINI.md">GEMINI.md — Gemini CLI</SelectItem>
+                <SelectItem value=".cursorrules">.cursorrules — Cursor</SelectItem>
+                <SelectItem value=".windsurfrules">.windsurfrules — Windsurf</SelectItem>
+                <SelectItem value=".clinerules">.clinerules — Cline</SelectItem>
+                <SelectItem value="custom">Custom...</SelectItem>
+              </SelectContent>
+            </Select>
+            {agentFilePreset === "custom" && (
+              <Input
+                value={agentFileCustom}
+                onChange={(e) => setAgentFileCustom(e.target.value)}
+                placeholder="e.g. COPILOT.md"
+                autoFocus
+              />
             )}
           </div>
         </div>

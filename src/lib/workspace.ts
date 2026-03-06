@@ -154,7 +154,7 @@ function buildBaconSection(project: Project): string {
 
 /**
  * Initialize workspace files when a folder is first linked.
- * Creates SPECS.md (if it doesn't exist) and writes/updates CLAUDE.md.
+ * Creates SPECS.md (if it doesn't exist) and writes/updates the agent instructions file.
  */
 export async function initWorkspaceFiles(project: Project): Promise<void> {
   if (!project.workspace_path) return;
@@ -173,12 +173,12 @@ export async function initWorkspaceFiles(project: Project): Promise<void> {
   await updateClaudeMd(project.workspace_path, project);
 }
 
-/** Create or update CLAUDE.md in the workspace with Bacon instructions. */
+/** Create or update the agent instructions file in the workspace with Bacon instructions. */
 export async function updateClaudeMd(
   workspacePath: string,
   project: Project
 ): Promise<void> {
-  const claudeMdPath = `${workspacePath}/CLAUDE.md`;
+  const claudeMdPath = `${workspacePath}/${project.agent_file ?? "CLAUDE.md"}`;
   const baconSection = buildBaconSection(project);
 
   let existing = "";
