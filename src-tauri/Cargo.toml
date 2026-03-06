@@ -1,6 +1,6 @@
 [package]
 name = "bacon"
-version = "0.2.0"
+version = "0.3.0"
 description = "Bacon - Requirements & Specification Manager"
 authors = ["you"]
 edition = "2021"
