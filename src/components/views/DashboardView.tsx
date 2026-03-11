@@ -1,7 +1,9 @@
-import { useEffect } from "react";
-import { FolderOpen } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Check, FileText, FolderOpen } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useProjectStore } from "@/store/projectStore";
 import { useSpecStore } from "@/store/specStore";
+import { updateClaudeMd } from "@/lib/workspace";
 import type { SpecPriority, SpecStatus } from "@/types";
 
 function StatCard({ label, value, sub }: { label: string; value: number | string; sub?: string }) {
@@ -33,6 +35,19 @@ export function DashboardView() {
   const { activeProjectId, projects } = useProjectStore();
   const { specs, load } = useSpecStore();
   const project = projects.find((p) => p.id === activeProjectId);
+  const [agentState, setAgentState] = useState<"idle" | "done" | "error">("idle");
+
+  async function handleUpdateAgentFiles() {
+    if (!project?.workspace_path) return;
+    try {
+      await updateClaudeMd(project.workspace_path, project);
+      setAgentState("done");
+      setTimeout(() => setAgentState("idle"), 2000);
+    } catch {
+      setAgentState("error");
+      setTimeout(() => setAgentState("idle"), 3000);
+    }
+  }
 
   useEffect(() => {
     if (activeProjectId) load(activeProjectId);
@@ -72,10 +87,27 @@ export function DashboardView() {
           ID prefix: <span className="font-mono text-[var(--color-primary)]">{project.prefix}</span>
         </p>
         {project.workspace_path && (
-          <p className="flex items-center gap-1 text-xs text-[var(--color-muted-foreground)] mt-0.5">
-            <FolderOpen className="h-3 w-3 shrink-0" />
-            <span className="font-mono truncate">{project.workspace_path}</span>
-          </p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <p className="flex items-center gap-1 text-xs text-[var(--color-muted-foreground)] min-w-0">
+              <FolderOpen className="h-3 w-3 shrink-0" />
+              <span className="font-mono truncate">{project.workspace_path}</span>
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleUpdateAgentFiles}
+              disabled={agentState === "done"}
+              className="gap-1.5 h-6 text-xs shrink-0"
+            >
+              {agentState === "done" ? (
+                <><Check className="h-3 w-3 text-green-400" />Updated</>
+              ) : agentState === "error" ? (
+                <><FileText className="h-3 w-3 text-red-400" />Failed</>
+              ) : (
+                <><FileText className="h-3 w-3" />Update {project.agent_file ?? "CLAUDE.md"}</>
+              )}
+            </Button>
+          </div>
         )}
       </div>
 
