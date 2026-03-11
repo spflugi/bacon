@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { FolderOpen } from "lucide-react";
 import { useProjectStore } from "@/store/projectStore";
 import { useSpecStore } from "@/store/specStore";
 import type { SpecPriority, SpecStatus } from "@/types";
@@ -70,6 +71,12 @@ export function DashboardView() {
         <p className="text-xs text-[var(--color-muted-foreground)] mt-1">
           ID prefix: <span className="font-mono text-[var(--color-primary)]">{project.prefix}</span>
         </p>
+        {project.workspace_path && (
+          <p className="flex items-center gap-1 text-xs text-[var(--color-muted-foreground)] mt-0.5">
+            <FolderOpen className="h-3 w-3 shrink-0" />
+            <span className="font-mono truncate">{project.workspace_path}</span>
+          </p>
+        )}
       </div>
 
       {/* Summary cards */}

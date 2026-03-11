@@ -1,11 +1,15 @@
 import { create } from "zustand";
-import type { Project } from "@/types";
+import type { Project, Specification } from "@/types";
 import {
   getProjects,
   createProject,
   updateProject,
   deleteProject,
+  createSpecification,
+  createSpecLink,
+  getNextSpecId,
 } from "@/lib/db";
+import type { ParsedImport } from "@/lib/import";
 
 interface ProjectStore {
   projects: Project[];
@@ -17,6 +21,7 @@ interface ProjectStore {
   add: (project: Omit<Project, "id" | "created_at" | "updated_at">) => Promise<Project>;
   update: (project: Project) => Promise<void>;
   remove: (id: string) => Promise<void>;
+  importProject: (parsed: ParsedImport, workspacePath: string) => Promise<Project>;
 }
 
 export const useProjectStore = create<ProjectStore>((set, get) => ({
@@ -74,5 +79,57 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
           : s.activeProjectId;
       return { projects, activeProjectId };
     });
+  },
+
+  importProject: async (parsed, workspacePath) => {
+    const project = await get().add({
+      name: parsed.projectName,
+      description: parsed.projectDescription,
+      prefix: parsed.projectPrefix,
+      workspace_path: workspacePath,
+      agent_file: "CLAUDE.md",
+    });
+
+    // Create all specs, mapping original spec IDs to new DB row IDs for link resolution
+    const idMap = new Map<string, string>();
+    for (const s of parsed.specs) {
+      const newSpecId = await getNextSpecId(project.id, project.prefix, s.type);
+      const now = new Date().toISOString();
+      const spec: Specification = {
+        id: crypto.randomUUID(),
+        spec_id: newSpecId,
+        project_id: project.id,
+        type: s.type,
+        category: s.category,
+        title: s.title,
+        description: s.description,
+        acceptance_criteria: s.acceptance_criteria,
+        status: s.status,
+        priority: s.priority,
+        tags: s.tags,
+        version: s.version,
+        notes: s.notes,
+        created_at: now,
+        updated_at: now,
+      };
+      await createSpecification(spec);
+      idMap.set(s.originalSpecId, spec.id);
+    }
+
+    // Create links, skipping any that reference specs outside the import
+    for (const link of parsed.links) {
+      const sourceId = idMap.get(link.sourceOriginalId);
+      const targetId = idMap.get(link.targetOriginalId);
+      if (!sourceId || !targetId) continue;
+      await createSpecLink({
+        id: crypto.randomUUID(),
+        source_id: sourceId,
+        target_id: targetId,
+        link_type: link.link_type,
+        notes: "",
+      });
+    }
+
+    return project;
   },
 }));

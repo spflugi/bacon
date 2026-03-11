@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FolderOpen, Plus, Pencil, Trash2, LayoutDashboard, ListChecks } from "lucide-react";
+import { FolderOpen, Plus, Pencil, Trash2, LayoutDashboard, ListChecks, Upload } from "lucide-react";
 import { version } from "../../../package.json";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -8,6 +8,9 @@ import { useProjectStore } from "@/store/projectStore";
 import { initWorkspaceFiles } from "@/lib/workspace";
 import { cn } from "@/lib/utils";
 import type { Project } from "@/types";
+import { open } from "@tauri-apps/plugin-dialog";
+import { readTextFile } from "@tauri-apps/plugin-fs";
+import { parseImport } from "@/lib/import";
 
 export type View = "dashboard" | "specs";
 
@@ -17,10 +20,11 @@ interface SidebarProps {
 }
 
 export function Sidebar({ view, onViewChange }: SidebarProps) {
-  const { projects, activeProjectId, setActive, add, update, remove } = useProjectStore();
+  const { projects, activeProjectId, setActive, add, update, remove, importProject } = useProjectStore();
   const [formOpen, setFormOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Project | undefined>();
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
 
   function openNew() {
     setEditTarget(undefined);
@@ -50,6 +54,25 @@ export function Sidebar({ view, onViewChange }: SidebarProps) {
   function handleDelete(id: string, e: React.MouseEvent) {
     e.stopPropagation();
     setConfirmDeleteId(id);
+  }
+
+  async function handleImport() {
+    const filePath = await open({
+      filters: [{ name: "Markdown", extensions: ["md"] }],
+      title: "Import Bacon spec file",
+    });
+    if (!filePath) return;
+    try {
+      const content = await readTextFile(filePath as string);
+      const parsed = parseImport(content);
+      const workspacePath = (filePath as string).replace(/\\/g, "/").split("/").slice(0, -1).join("/");
+      const project = await importProject(parsed, workspacePath);
+      setActive(project.id);
+      onViewChange("specs");
+    } catch (e) {
+      setImportError(e instanceof Error ? e.message : String(e));
+      setTimeout(() => setImportError(null), 4000);
+    }
   }
 
   const navItems: { id: View; label: string; icon: React.ReactNode }[] = [
@@ -91,10 +114,18 @@ export function Sidebar({ view, onViewChange }: SidebarProps) {
         <span className="text-xs font-semibold text-[var(--color-muted-foreground)] uppercase tracking-wider">
           Projects
         </span>
-        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={openNew} title="New project">
-          <Plus className="h-3.5 w-3.5" />
-        </Button>
+        <div className="flex items-center gap-0.5">
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleImport} title="Import spec file">
+            <Upload className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={openNew} title="New project">
+            <Plus className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </div>
+      {importError && (
+        <p className="text-xs text-[var(--color-destructive)] px-3 pb-1 leading-tight">{importError}</p>
+      )}
 
       <div className="flex-1 overflow-y-auto px-2 pb-2">
         {projects.length === 0 && (
